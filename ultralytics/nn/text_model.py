@@ -353,7 +353,7 @@ def build_text_model(variant: str, device: torch.device = None) -> TextModel:
     if base == "clip":
         return CLIP(size, device)
     elif base == "mobileclip":
-        return MobileCLIPTS(device)
+        return MobileCLIPTS(device, weight="/irip/liaozhixuan_2023/yolo/ultralytics/pretrained/mobileclip_blt.ts")
     elif base == "mobileclip2":
         return MobileCLIPTS(device, weight="mobileclip2_b.ts")
     else:

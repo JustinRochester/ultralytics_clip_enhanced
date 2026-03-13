@@ -429,3 +429,26 @@ class YOLOE(Model):
         self.overrides["agnostic_nms"] = True  # use agnostic nms for YOLOE default
 
         return super().predict(source, stream, **kwargs)
+
+class CLIPEnhancedYOLOE(YOLOE):
+    def __init__(self, model: str | Path = "yoloe-11s-seg.pt", task: str | None = None, verbose: bool = False) -> None:
+        super().__init__(model=model, task=task, verbose=verbose)
+    
+    @property
+    def task_map(self) -> dict[str, dict[str, Any]]:
+        from ultralytics.nn.tasks import CLIPEnhancedYOLOEModel, CLIPEnhancedYOLOESegModel
+        """Map head to model, trainer, validator, and predictor classes."""
+        return {
+            "detect": {
+                "model": CLIPEnhancedYOLOEModel,
+                "validator": yolo.yoloe.YOLOEDetectValidator,
+                "predictor": yolo.detect.DetectionPredictor,
+                "trainer": yolo.yoloe.YOLOETrainer,
+            },
+            "segment": {
+                "model": CLIPEnhancedYOLOESegModel,
+                "validator": yolo.yoloe.YOLOESegValidator,
+                "predictor": yolo.segment.SegmentationPredictor,
+                "trainer": yolo.yoloe.YOLOESegTrainer,
+            },
+        }
