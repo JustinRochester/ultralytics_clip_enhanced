@@ -1320,7 +1320,7 @@ class Ensemble(torch.nn.ModuleList):
         y = torch.cat(y, 2)  # nms ensemble, y shape(B, HW, C*num_models)
         return y, None  # inference, train output
 
-from ultralytics.nn.extend_modules.clip_enhanced_yoloe_head import CLIPEnhancedYOLOEDetect
+from ultralytics.nn.extend_modules.clip_enhanced_yoloe_head import CLIPEnhancedYOLOEDetect, CLIPEnhancedYOLOESegment
 from ultralytics.nn.extend_modules.clip_enhanced_yoloe_model import CLIPEnhancedYOLOEModel, CLIPEnhancedYOLOESegModel
 
 # Functions ------------------------------------------------------------------------------------------------------------
@@ -1694,14 +1694,21 @@ def parse_model(d, ch, verbose=True):
                 OBB,
                 OBB26,
                 CLIPEnhancedYOLOEDetect,
+                CLIPEnhancedYOLOESegment,
             }
         ):
+            if m in {CLIPEnhancedYOLOEDetect, CLIPEnhancedYOLOESegment}:
+                fuser_type = [args[-1]] if isinstance(args[-1], str) else []
+                if len(fuser_type):
+                    args = args[:-1]
             args.extend([reg_max, end2end, [ch[x] for x in f]])
             if m is Segment or m is YOLOESegment or m is Segment26 or m is YOLOESegment26:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
             if m in {Detect, YOLOEDetect, Segment, Segment26, YOLOESegment, YOLOESegment26, Pose, Pose26, OBB, OBB26,
-                CLIPEnhancedYOLOEDetect,}:
+                CLIPEnhancedYOLOEDetect, CLIPEnhancedYOLOESegment}:
                 m.legacy = legacy
+            if m in {CLIPEnhancedYOLOEDetect, CLIPEnhancedYOLOESegment}:
+                args += fuser_type
         elif m is v10Detect:
             args.append([ch[x] for x in f])
         elif m is ImagePoolingAttn:
@@ -1818,8 +1825,7 @@ def guess_model_task(model):
                 return "pose"
             elif isinstance(m, OBB):
                 return "obb"
-            elif isinstance(m, (Detect, WorldDetect, YOLOEDetect, v10Detect, 
-                CLIPEnhancedYOLOEDetect,)):
+            elif isinstance(m, (Detect, WorldDetect, YOLOEDetect, v10Detect)):
                 return "detect"
 
     # Guess from model filename
